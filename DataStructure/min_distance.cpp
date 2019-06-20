@@ -147,6 +147,34 @@ vector<int> bellman_ford(Graph& graph, int src) {
     return dist;
 }
 
+struct PQCOMP {
+    bool operator() (const pair<int, int>& a, const pair<int, int>& b) {
+        return a.second > b.second;
+    }
+};
+// https://www.geeksforgeeks.org/dijkstras-shortest-path-algorithm-using-priority_queue-stl/
+vector<int> dijkstra(Graph& g, int src) {
+    priority_queue<pair<int, int>, vector<pair<int, int>>, PQCOMP> pq;
+    vector<int> dist(g.n_vertex, INF);
+    dist[src] = 0;
+    pq.push(pair<int, int>(src, 0));
+    // 这里相当于允许了重复节点进入队列的，并且每次更新所有的邻接点的距离。
+    // 只要更新了，他的邻接边就有可能更新，其实有点和bellman-fold有些像。
+    while (!pq.empty()) {
+        auto cur_node = pq.top();
+        pq.pop();
+
+        EdgeNode* edge_head = g.vertex_arr[cur_node.first]->edge_head;
+        while (edge_head != NULL) {
+            if (dist[edge_head->target] > edge_head->weight + dist[cur_node.first]) {
+                dist[edge_head->target] = edge_head->weight + dist[cur_node.first];
+                pq.push(pair<int, int>(edge_head->target, dist[edge_head->target]));
+            }
+            edge_head = edge_head->next;
+        }
+    }
+    return dist;
+}
 int main() {
     // vector<vector<int>> graph{{0, 4, INF, INF, INF, INF, INF, 8, INF}, 
     //                   {4, 0, 8, INF, INF, INF, INF, 11, INF}, 
@@ -205,6 +233,7 @@ int main() {
     g.addEdge(6, 7, 1); 
     g.addEdge(6, 8, 6);
     g.addEdge(7, 8, 7);
+    vector<int> result = dijkstra(g, 0);
     vector<int> result = bellman_ford(g, 0);
     for (int i = 0; i < 9; ++i) {
         cout << i << " -> " << result[i] << endl;
