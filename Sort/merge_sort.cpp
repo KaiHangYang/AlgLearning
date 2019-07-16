@@ -34,3 +34,23 @@ void mergesort(vector<int> &arr, int first, int last) {
         merge(arr, first, mid, last);
     }
 }
+
+void mergesort_norecursive(vector<int> &arr, int first, int last) {
+    int n = arr.size();
+    for (int i = 1; i < n; i += i) {
+        int left = 0;
+        int mid = left + i - 1;
+        int right = mid + i;
+
+        while (right < n) {
+            merge(arr, left, mid, right + 1);
+            left = right + 1;
+            mid = left + i - 1;
+            right = mid + i;
+        }
+
+        if (left < n && mid < n) {
+            merge(arr, left, mid, n);
+        }
+    }
+}
