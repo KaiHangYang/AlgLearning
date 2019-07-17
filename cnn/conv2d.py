@@ -70,11 +70,28 @@ class Conv2D(object):
     def gradient(self, eta):
         self.eta = eta
         col_eta = np.reshape(eta, [self.batchsize, -1, self.output_channels])
-
         for i in range(self.batchsize):
+            # 可以根据矩阵求导法则导出下面的偏导式子
+            # https://zhuanlan.zhihu.com/p/24709748
+            # 用全微分公式来退矩阵偏导会好很多
+            # 其中 tr(AT*B) 两阵的点积
+            # Ycol = Xcol * Wcol + bcol
+            # Xcol is constant
+            # dY = Xcol * dWcol
+            # dJ = tr((pianJ / pianY)T * dY)
+            #    = tr(etaT * Xcol * dWcol)
+            #    = tr((XcolT * eta)T * dWcol)
+            # pianJ / pianWcol = XcolT * eta
+            # 如何理解下面式子呢
+            # col_image[i].T shape is [NUM, Y] (NUM is ksize * ksize * Cin) col_eta[i] shape is [Y, Cout]
+            # the the dot result is [ksize, ksize, Cin, Cout] 也就是weight的梯度
             self.w_gradient += np.dot(self.col_image[i].T, col_eta[i]).reshape(self.weights.shape)
+        # bias 其实同理 不过需要注意的是bias 特征图所有的width 和height共享，不同通道不同
+        # 也就是bias的shape 是[1, 1, 1, Cout]
         self.b_gradient += np.sum(col_eta, axis[0, 1])
 
+        # 还有就是如何将梯度回传这个问题了
+        # 这个回传方法是根据https://zhuanlan.zhihu.com/p/40951745 避免了对im2col的逆向计算
         if self.method == "VALID":
             pad_eta = np.pad(self.eta, ((0, 0), (self.ksize - 1, self.ksize - 1), (self.ksize - 1, self.ksize - 1), (0, 0)), "constant", constant_values = 0)
         elif self.method == "SAME":
